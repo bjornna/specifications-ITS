@@ -1,0 +1,819 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Work in progress by Bjørn Næss (bna@dips.no)
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.openehr.org/v1"
+           targetNamespace="http://schemas.openehr.org/v1" elementFormDefault="qualified" version="v1.0.2"
+           id="TaskPlan.xsd">
+    <xs:include schemaLocation="Content.xsd"/>
+    <!-- Added PLAN_ITEM as a group to handle multiple inheritance -->
+    <xs:complexType name="WORK_PLAN">
+        <xs:complexContent>
+            <xs:extension base="CONTENT_ITEM">
+                <xs:sequence>
+                    <xs:element name="care_pathway" type="DV_IDENTIFIER" minOccurs="0"/>
+                    <xs:element name="plans" type="UID_BASED_ID" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="care_plan" type="LOCATABLE_REF" minOccurs="0"/>
+                    <xs:element name="order_list" type="LOCATABLE_REF" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="description" type="DV_TEXT"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_PLAN">
+        <xs:complexContent>
+            <xs:extension base="CONTENT_ITEM">
+                <xs:sequence>
+                    <xs:element name="description" type="DV_TEXT"/>
+                    <xs:element name="subject" type="PARTY_PROXY" minOccurs="0"/>
+                    <xs:element name="guideline" type="DV_IDENTIFIER" minOccurs="0"/>
+                    <xs:element name="definition" type="TASK_GROUP"/>
+                    <xs:element name="execution_history" type="TASK_PLAN_EXECUTION_HISTORY" minOccurs="0"/>
+                    <xs:element name="best_practice_ref" type="DV_URI" minOccurs="0"/>
+                    <xs:element name="expiry_time" type="Duration" minOccurs="0"/>
+                    <xs:element name="due_time" type="Duration" minOccurs="0"/>
+                    <xs:element name="order_set" type="DV_IDENTIFIER" minOccurs="0"/>
+                    <xs:element name="workflow_id" type="OBJECT_REF" minOccurs="0"/>
+                    <xs:element name="context" type="PLAN_DATA_CONTEXT" minOccurs="0"/>
+                    <xs:element name="indications" type="DV_TEXT" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="PLAN_DATA_CONTEXT">
+        <xs:sequence>
+            <xs:element name="variables" type="CONTEXT_VARIABLE" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="expressions" type="CONTEXT_EXPRESSION" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="constants" type="CONTEXT_CONSTANT" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CONTEXT_VALUE" abstract="true">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="CONTEXT_CONSTANT">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_VALUE">
+                <xs:sequence>
+                    <xs:element name="value" type="xs:anyType"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CONTEXT_EXPRESSION">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_VALUE">
+                <xs:sequence>
+                    <xs:element name="expression" type="xs:string"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="BOOLEAN_CONTEXT_EXPRESSION">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_EXPRESSION"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CONTEXT_VARIABLE" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_VALUE"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EXTERNAL_VARIABLE" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_VARIABLE">
+                <xs:sequence>
+                    <xs:element name="populating_request" type="SYSTEM_CALL" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="LOCAL_VARIABLE">
+        <xs:complexContent>
+            <xs:extension base="CONTEXT_VARIABLE"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EVENT_VARIABLE">
+        <xs:complexContent>
+            <xs:extension base="EXTERNAL_VARIABLE"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CONTINUOUS_EVENT_VARIABLE">
+        <xs:complexContent>
+            <xs:extension base="EVENT_VARIABLE">
+                <xs:sequence>
+                    <xs:element name="update_variation" type="xs:long"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="STATE_VARIABLE">
+        <xs:complexContent>
+            <xs:extension base="EXTERNAL_VARIABLE">
+                <xs:sequence>
+                    <xs:element name="required_currency" type="Duration" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <!-- Execution history -->
+    <xs:complexType name="TASK_PLAN_EXECUTION_HISTORY">
+        <xs:sequence>
+            <xs:element name="task_events" type="TASK_EVENT_RECORD" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="plan_events" type="TASK_PLAN_EVENT_RECORD" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="EVENT_RECORD" abstract="true">
+        <xs:sequence>
+            <xs:element name="time" type="Date_Time"/>
+            <xs:element name="description" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="TASK_PLAN_EVENT_RECORD">
+        <xs:complexContent>
+            <xs:extension base="EVENT_RECORD">
+                <xs:sequence>
+                    <xs:element name="details" type="HASH_STRING_STRING" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_EVENT_RECORD">
+        <xs:complexContent>
+            <xs:extension base="EVENT_RECORD">
+                <xs:sequence>
+                    <xs:element name="task_id" type="xs:string"/>
+                    <xs:element name="lifecycle_state" type="TASK_LIFECYCLE"/>
+                    <xs:element name="notifications_sent" type="TASK_NOTIFICATION_RECORD" minOccurs="0"
+                                maxOccurs="unbounded"/>
+                    <xs:element name="entry_instances" type="LOCATABLE_REF" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="preconditions_satisfied" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="wait_conditions_satisfied" type="xs:boolean" minOccurs="1" maxOccurs="1"/>
+                    <xs:element name="lifecycle_transition_reason" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_NOTIFICATION_RECORD">
+        <xs:sequence>
+            <xs:element name="receiver" type="PARTY_PROXY"/>
+            <xs:element name="receiver_task_plan" type="xs:string"/>
+            <xs:element name="details" type="HASH_STRING_STRING" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="HASH_STRING_STRING">
+        <xs:attribute name="key" type="xs:string"/>
+        <xs:attribute name="value" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="Ordered"/>
+    <xs:complexType name="Time_Definitions">
+        <xs:sequence>
+            <xs:element name="Seconds_in_minute" type="xs:integer"/>
+            <xs:element name="Minutes_in_hour" type="xs:integer"/>
+            <!--
+            There is a lot of extra constants - I am not adding them here.
+            I am not sure how to deal with this class in XSD.
+            http://www.openehr.org/releases/BASE/latest/docs/foundation_types/foundation_types.html#_time_definitions_class
+            -->
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="Temporal">
+        <xs:complexContent>
+            <xs:extension base="Ordered"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="IDuration">
+        <xs:complexContent>
+            <xs:extension base="Temporal"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="Duration">
+        <xs:complexContent>
+            <xs:extension base="IDuration">
+                <xs:sequence>
+                    <xs:element name="value" type="xs:integer"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="IDate_time">
+        <xs:complexContent>
+            <xs:extension base="Temporal"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="Date_Time">
+        <xs:complexContent>
+            <xs:extension base="IDate_time">
+                <xs:sequence>
+                    <xs:element name="value" type="xs:integer"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="Time">
+        <xs:complexContent>
+            <xs:extension base="IDate_time">
+                <xs:sequence>
+                    <xs:element name="value" type="xs:integer"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_PARTICIPATION">
+        <xs:sequence>
+            <xs:element name="function" type="DV_TEXT"/>
+            <xs:element name="role" type="DV_TEXT" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="mode" type="DV_CODED_TEXT" minOccurs="0"/>
+            <xs:element name="performer" type="PARTY_PROXY"/>
+            <xs:element name="optionality" type="VALIDITY_KIND"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="VALIDITY_KIND">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="mandatory"/>
+            <xs:enumeration value="optional"/>
+            <xs:enumeration value="prohibited"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="TASK_EXECUTION_CONDITION">
+        <xs:sequence>
+            <xs:element name="condition_expression" type="DV_PARSABLE" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="preconditions" type="DV_TEXT" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PLANNED_TIME">
+        <xs:sequence>
+            <xs:element name="execution_window" type="IntervalOfDateTime" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="relative_offset" type="DV_DURATION" minOccurs="0"/>
+            <xs:element name="relative_qualifier" type="CODE_PHRASE" minOccurs="0"/>
+            <xs:element name="event_alignment" type="CODE_PHRASE" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PLANNED_PARTICIPATION">
+        <xs:complexContent>
+            <xs:extension base="LOCATABLE">
+                <xs:sequence>
+                    <xs:element name="role" type="DV_TEXT" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="mode" type="DV_CODED_TEXT" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="performer" type="PARTY_PROXY" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="function" type="DV_TEXT" minOccurs="1" maxOccurs="1"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="TASK_WAIT">
+        <xs:sequence>
+            <xs:element name="events" type="PLAN_EVENT" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="event_relation" type="TEMPORAL_RELATION" minOccurs="0"/>
+            <xs:element name="start_window" type="REMINDER" minOccurs="0"/>
+            <xs:element name="timeout" type="TIMER_WAIT" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    
+    <xs:complexType name="EVENT_WAIT" abstract="true">
+        <xs:sequence>
+            <!-- <xs:element name="event" type="PLAN_EVENT" /> -->
+            <xs:element name="success_action" type="EVENT_ACTION" minOccurs="0"/>
+            <xs:element name="timeout" type="TIMER_WAIT" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="TIMER_WAIT">
+        <xs:complexContent>
+            <xs:extension base="EVENT_WAIT">
+                <xs:sequence>
+                    <xs:element name="event" type="TIMER_EVENT"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EVENT_ACTION">
+        <xs:sequence>
+            <xs:element name="system_call" type="SYSTEM_CALL" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="message" type="DV_TEXT" minOccurs="0"/>
+            <xs:element name="resume_action" type="RESUME_ACTION" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="SYSTEM_CALL">
+        <xs:sequence>
+            <xs:element name="system_id" type="UID_BASED_ID"/>
+            <xs:element name="call_name" type="xs:string"/>
+            <!-- yet to be decided the structure here -->
+            <!-- <xs:element name="definition" type="xs:anyType" minOccurs="0"/> -->
+            <xs:element name="parameters" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="name" type="xs:string"/>
+                    <xs:attribute name="value" type="xs:string"/>
+                </xs:complexType>
+            </xs:element>
+            <!--
+            From an older version of the spec
+            <xs:element name="parameter_map" type="PARAMETER_MAPPING" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="bound_parameters" type="PARAMETER_DEF" minOccurs="0" maxOccurs="unbounded"/>
+            -->
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="API_CALL">
+        <xs:complexContent>
+            <xs:extension base="SYSTEM_CALL"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="QUERY_CALL">
+        <xs:complexContent>
+            <xs:extension base="SYSTEM_CALL">
+                <xs:sequence>
+                    <xs:element name="query_id" type="xs:string" minOccurs="0"/>
+                    <xs:element name="query_text" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="PARAMETER_DEF">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="type" type="EXPR_TYPE_DEF"/>
+            <xs:element name="value" type="xs:anyType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="EXPR_TYPE_DEF">
+        <xs:sequence>
+            <xs:element name="type_name" type="xs:string"/>
+            <xs:element name="type_anchor" type="xs:anyType"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PARAMETER_MAPPING">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="context_name" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="RESUME_ACTION">
+        <xs:sequence>
+            <xs:element name="resume_type" type="RESUME_TYPE"/>
+            <xs:element name="resume_location" type="UID_BASED_ID" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="RESUME_TYPE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="resume_specified"/>
+            <xs:enumeration value="retry_current_group"/>
+            <xs:enumeration value="new_thread"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="PLAN_EVENT">
+        <xs:complexContent>
+            <xs:extension base="LOCATABLE">
+                <xs:sequence>
+                    <xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TIMER_EVENT">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="duration" type="IDuration"/>
+                    <xs:element name="purpose" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DELAY_EVENT">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="source" type="UID_BASED_ID"/>
+                    <xs:element name="delay" type="IDuration"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="MANUAL_NOTIFICATION">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="description" type="xs:string"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="SYSTEM_NOTIFICATION">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="system_id" type="xs:string"/>
+                    <xs:element name="notification_type" type="xs:string" minOccurs="0"/>
+                    <xs:element name="reference_id" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CALLBACK_NOTIFICATION">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="task_id" type="UID_BASED_ID"/>
+                    <xs:element name="request_id" type="xs:string" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="STATE_TRIGGER">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="expression" type="BOOLEAN_CONTEXT_EXPRESSION"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="REMINDER">
+        <xs:complexContent>
+            <xs:extension base="TIMER_WAIT"/>
+        </xs:complexContent>
+        <!-- Specialised Timer configured to generate a reminder or alert to performer or other user. -->
+    </xs:complexType>
+<xs:complexType name="CALENDAR_EVENT">
+    <xs:complexContent>
+        <xs:extension base="PLAN_EVENT">
+            <xs:sequence>
+                <xs:element name="entry_id" type="UID_BASED_ID" minOccurs="0" />
+                <xs:element name="time" type="IDate_time" />
+            </xs:sequence>
+        </xs:extension>
+    </xs:complexContent>
+</xs:complexType>
+    <xs:complexType name="TIMELINE_MOMENT">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="timeline_offset" type="IDuration" minOccurs="0"/>
+                    <xs:element name="fixed_time" type="TIME_SPECIFIER" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    
+
+    <xs:complexType name="CALLBACK_WAIT">
+        <xs:complexContent>
+            <xs:extension base="EVENT_WAIT">
+                <xs:sequence>
+                    <xs:element name="fail_action" type="EVENT_ACTION" minOccurs="0"/>
+                    <xs:element name="event" type="CALLBACK_NOTIFICATION" />
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="PLAN_ITEM" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="LOCATABLE">
+                <xs:sequence>
+                    <xs:element name="description" type="DV_TEXT"/>
+                    <xs:element name="repeat_spec" type="TASK_REPEAT" minOccurs="0"/>
+                    <xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>
+                    <xs:element name="wait_spec" type="TASK_WAIT"/>
+                    <xs:element name="review_dataset" type="DATASET_SPEC" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_GROUP">
+        <xs:complexContent>
+            <xs:extension base="PLAN_ITEM">
+                <xs:sequence>
+                    <!-- <xs:element name="members" type="PLAN_ITEM" minOccurs="0" maxOccurs="unbounded"/> -->
+                    <xs:element name="execution_type" type="EXECUTION_TYPE"/>
+                    <xs:element name="training_level" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="execution_rules" type="EXECUTION_RULE" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="PLAN_ITEM">
+                <xs:sequence>
+                    <xs:element name="action" type="TASK_ACTION"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DISPATCHABLE_TASK">
+        <xs:complexContent>
+            <xs:extension base="TASK">
+                <xs:sequence>
+                    <xs:element name="wait" type="xs:boolean"/>
+                    <xs:element name="callback" type="CALLBACK_WAIT" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="PERFORMABLE_TASK">
+        <xs:complexContent>
+            <xs:extension base="TASK">
+                <xs:sequence>
+                    <xs:element name="capture_dataset" type="DATASET_SPEC" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DATASET_SPEC">
+        <xs:sequence>
+            <xs:element name="form_id" type="xs:string" minOccurs="0"/>
+            <xs:element name="template_id" type="xs:string" minOccurs="0"/>
+            <xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="TASK_REPEAT">
+        <xs:sequence>
+            <xs:element name="repeats" type="IntervalOfInteger" minOccurs="0"/>
+            <xs:element name="terminate_condition" type="PLAN_EVENT" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="EXECUTION_RULE">
+        <xs:simpleContent>
+            <xs:extension base="xs:string"/>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:simpleType name="EXECUTION_TYPE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="sequential"/>
+            <xs:enumeration value="parallel"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="TEMPORAL_RELATION">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="before"/>
+            <xs:enumeration value="with"/>
+            <xs:enumeration value="after"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="TASK_LIST_STATE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="proposed"/>
+            <xs:enumeration value="active"/>
+            <xs:enumeration value="completed"/>
+            <xs:enumeration value="abandoned"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="TASK_LIFECYCLE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="planned"/>
+            <xs:enumeration value="available"/>
+            <xs:enumeration value="cancelled"/>
+            <xs:enumeration value="abandoned"/>
+            <xs:enumeration value="completed"/>
+            <xs:enumeration value="completed"/>
+            <xs:enumeration value="suspended"/>
+            <xs:enumeration value="underway"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="CALLBACK_TYPE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="resume_next"/>
+            <xs:enumeration value="resume_specified"/>
+            <xs:enumeration value="retry"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <!---
+
+    TASK_ACTION
+
+    -->
+    <xs:complexType name="TASK_ACTION" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="LOCATABLE">
+                <xs:sequence>
+                    <xs:element name="instruction_activity" type="LOCATABLE_REF" minOccurs="0"/>
+                    <xs:element name="subject_preconditions" type="SUBJECT_PRECONDITION" minOccurs="0"
+                                maxOccurs="unbounded"/>
+                    <xs:element name="costing_data" type="TASK_COSTING" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TASK_COSTING">
+        <xs:sequence>
+
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="SUBJECT_PRECONDITION">
+        <xs:sequence>
+            <xs:element name="description" type="xs:string"/>
+            <xs:element name="expression" type="BOOLEAN_CONTEXT_EXPRESSION" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PERFORMABLE_ACTION">
+        <xs:complexContent>
+            <xs:extension base="TASK_ACTION">
+                <xs:sequence>
+                    <xs:element name="resources" type="RESOURCE_PARTICIPATION" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="other_participations" type="TASK_PARTICIPATION" minOccurs="0"
+                                maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DEFINED_ACTION">
+        <xs:complexContent>
+            <xs:extension base="PERFORMABLE_ACTION">
+                <xs:sequence>
+                    <xs:element name="prototype" type="ENTRY" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="optionality" type="VALIDITY_KIND" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DISPATCHABLE_ACTION" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="TASK_ACTION"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EXTERNAL_REQUEST">
+        <xs:complexContent>
+            <xs:extension base="DISPATCHABLE_ACTION">
+                <xs:sequence>
+                    <xs:element name="organisation" type="PARTY_PROXY"/>
+                    <xs:element name="request_id" type="xs:string"/>
+                    <xs:element name="other_details" type="ITEM_STRUCTURE" minOccurs="0"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="SYSTEM_REQUEST">
+        <xs:complexContent>
+            <xs:extension base="DISPATCHABLE_ACTION">
+                <xs:sequence>
+                    <xs:element name="system_call" type="SYSTEM_CALL"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="LINKED_PLAN" abstract="true">
+        <xs:sequence>
+            <xs:element name="target" type="UID_BASED_ID"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="SUB_LINKED_PLAN" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="LINKED_PLAN"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="SUB_LINKED_AND_PERFORMABLE_ACTION_PLAN" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="PERFORMABLE_ACTION"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="SUB_LINKED_PLAN_HAND_OFF" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="LINKED_PLAN"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="HAND_OFF">
+        <xs:complexContent>
+            <xs:extension base="SUB_LINKED_PLAN_HAND_OFF"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="SUB_PLAN">
+        <xs:complexContent>
+            <xs:extension base="SUB_LINKED_AND_PERFORMABLE_ACTION_PLAN"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="RESOURCE_PARTICIPATION">
+        <xs:sequence>
+            <xs:element name="resource_type" type="DV_TEXT"/>
+            <xs:element name="external_ref" type="OBJECT_REF" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CHOICE_GROUP" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="TASK_GROUP">
+                <xs:sequence>
+                    <xs:element name="override_type" type="OVERRIDE_TYPE"/>
+
+                        <xs:element name="members" type="CHOICE_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+
+
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:simpleType name="OVERRIDE_TYPE">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="allowed"/>
+            <xs:enumeration value="allowed_with_reason"/>
+            <xs:enumeration value="prohibited"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="CHOICE_BRANCH" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="TASK_GROUP"/>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ADHOC_GROUP">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_GROUP">
+                <xs:sequence>
+                    <xs:element name="members" type="ADHOC_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="ADHOC_BRANCH">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_BRANCH"/>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="CONDITION_GROUP">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_GROUP">
+                <xs:sequence>
+                    <xs:element name="members" type="CONDITION_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CONDITION_BRANCH">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_BRANCH">
+                <xs:sequence>
+                    <xs:element name="test" type="BOOLEAN_CONTEXT_EXPRESSION"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="DECISION_GROUP">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_GROUP">
+                <xs:sequence>
+                    <xs:element name="test" type="CONTEXT_EXPRESSION"/>
+                    <xs:element name="members" type="DECISION_BRANCH"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="DECISION_BRANCH">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_BRANCH">
+                <xs:sequence>
+                    <xs:element name="value_constraint" type="BOOLEAN_CONTEXT_EXPRESSION"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="EVENT_GROUP">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_GROUP">
+                <xs:sequence>
+                    <xs:element name="timeout" type="TIMER_WAIT" minOccurs="0"/>
+                    <xs:element name="members" type="EVENT_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EVENT_BRANCH">
+        <xs:complexContent>
+            <xs:extension base="CHOICE_BRANCH"/>
+
+
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="TIME_SPECIFIER" abstract="true">
+
+    </xs:complexType>
+    <xs:complexType name="CLOCK_TIME">
+        <xs:complexContent>
+            <xs:extension base="TIME_SPECIFIER">
+                <xs:sequence>
+                    <xs:element name="time" type="Time"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CALENDAR_TIME">
+        <xs:complexContent>
+            <xs:extension base="TIME_SPECIFIER">
+                <xs:sequence>
+                    <xs:element name="time" type="Date_Time"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="CUSTOMARY_TIME">
+        <xs:complexContent>
+            <xs:extension base="TIME_SPECIFIER">
+                <xs:sequence>
+                    <xs:element name="time" type="DV_CODED_TEXT"/>
+                </xs:sequence>
+
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+</xs:schema>
