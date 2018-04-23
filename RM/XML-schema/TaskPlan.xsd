@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- edited with XMLSpy v2012 rel. 2 sp1 (x64) (http://www.altova.com) by Bjørn Næss (private) -->
 <!--
 Work in progress by Bjørn Næss (bna@dips.no)
 -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://schemas.openehr.org/v1"
-           targetNamespace="http://schemas.openehr.org/v1" elementFormDefault="qualified" version="v1.0.2"
-           id="TaskPlan.xsd">
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://schemas.openehr.org/v1" targetNamespace="http://schemas.openehr.org/v1"
+        elementFormDefault="qualified" version="v1.0.2" id="TaskPlan.xsd">
     <xs:include schemaLocation="Content.xsd"/>
     <!-- Added PLAN_ITEM as a group to handle multiple inheritance -->
     <xs:complexType name="WORK_PLAN">
@@ -262,7 +264,6 @@ Work in progress by Bjørn Næss (bna@dips.no)
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-
     <xs:complexType name="TASK_WAIT">
         <xs:sequence>
             <xs:element name="events" type="PLAN_EVENT" minOccurs="0" maxOccurs="unbounded"/>
@@ -271,7 +272,6 @@ Work in progress by Bjørn Næss (bna@dips.no)
             <xs:element name="timeout" type="TIMER_WAIT" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
-    
     <xs:complexType name="EVENT_WAIT" abstract="true">
         <xs:sequence>
             <!-- <xs:element name="event" type="PLAN_EVENT" /> -->
@@ -307,11 +307,6 @@ Work in progress by Bjørn Næss (bna@dips.no)
                     <xs:attribute name="value" type="xs:string"/>
                 </xs:complexType>
             </xs:element>
-            <!--
-            From an older version of the spec
-            <xs:element name="parameter_map" type="PARAMETER_MAPPING" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="bound_parameters" type="PARAMETER_DEF" minOccurs="0" maxOccurs="unbounded"/>
-            -->
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="API_CALL">
@@ -435,16 +430,16 @@ Work in progress by Bjørn Næss (bna@dips.no)
         </xs:complexContent>
         <!-- Specialised Timer configured to generate a reminder or alert to performer or other user. -->
     </xs:complexType>
-<xs:complexType name="CALENDAR_EVENT">
-    <xs:complexContent>
-        <xs:extension base="PLAN_EVENT">
-            <xs:sequence>
-                <xs:element name="entry_id" type="UID_BASED_ID" minOccurs="0" />
-                <xs:element name="time" type="IDate_time" />
-            </xs:sequence>
-        </xs:extension>
-    </xs:complexContent>
-</xs:complexType>
+    <xs:complexType name="CALENDAR_EVENT">
+        <xs:complexContent>
+            <xs:extension base="PLAN_EVENT">
+                <xs:sequence>
+                    <xs:element name="entry_id" type="UID_BASED_ID" minOccurs="0"/>
+                    <xs:element name="time" type="IDate_time"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="TIMELINE_MOMENT">
         <xs:complexContent>
             <xs:extension base="PLAN_EVENT">
@@ -455,14 +450,12 @@ Work in progress by Bjørn Næss (bna@dips.no)
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    
-
     <xs:complexType name="CALLBACK_WAIT">
         <xs:complexContent>
             <xs:extension base="EVENT_WAIT">
                 <xs:sequence>
                     <xs:element name="fail_action" type="EVENT_ACTION" minOccurs="0"/>
-                    <xs:element name="event" type="CALLBACK_NOTIFICATION" />
+                    <xs:element name="event" type="CALLBACK_NOTIFICATION"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -484,7 +477,7 @@ Work in progress by Bjørn Næss (bna@dips.no)
         <xs:complexContent>
             <xs:extension base="PLAN_ITEM">
                 <xs:sequence>
-                    <!-- <xs:element name="members" type="PLAN_ITEM" minOccurs="0" maxOccurs="unbounded"/> -->
+                    <xs:element name="members" type="PLAN_ITEM" minOccurs="0" maxOccurs="unbounded"/>
                     <xs:element name="execution_type" type="EXECUTION_TYPE"/>
                     <xs:element name="training_level" type="xs:integer" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="execution_rules" type="EXECUTION_RULE" minOccurs="0" maxOccurs="unbounded"/>
@@ -579,9 +572,7 @@ Work in progress by Bjørn Næss (bna@dips.no)
         </xs:restriction>
     </xs:simpleType>
     <!---
-
     TASK_ACTION
-
     -->
     <xs:complexType name="TASK_ACTION" abstract="true">
         <xs:complexContent>
@@ -596,9 +587,8 @@ Work in progress by Bjørn Næss (bna@dips.no)
         </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="TASK_COSTING">
-        <xs:sequence>
-
-        </xs:sequence>
+        <xs:sequence/>
+        <!-- NO definition in spec -->
     </xs:complexType>
     <xs:complexType name="SUBJECT_PRECONDITION">
         <xs:sequence>
@@ -688,16 +678,12 @@ Work in progress by Bjørn Næss (bna@dips.no)
             <xs:element name="external_ref" type="OBJECT_REF" minOccurs="0"/>
         </xs:sequence>
     </xs:complexType>
-
     <xs:complexType name="CHOICE_GROUP" abstract="true">
         <xs:complexContent>
             <xs:extension base="TASK_GROUP">
                 <xs:sequence>
                     <xs:element name="override_type" type="OVERRIDE_TYPE"/>
-
-                        <xs:element name="members" type="CHOICE_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
-
-
+                    <xs:element name="choice_members" type="CHOICE_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -718,7 +704,7 @@ Work in progress by Bjørn Næss (bna@dips.no)
         <xs:complexContent>
             <xs:extension base="CHOICE_GROUP">
                 <xs:sequence>
-                    <xs:element name="members" type="ADHOC_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="ad_hoc_members" type="ADHOC_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -728,12 +714,11 @@ Work in progress by Bjørn Næss (bna@dips.no)
             <xs:extension base="CHOICE_BRANCH"/>
         </xs:complexContent>
     </xs:complexType>
-
     <xs:complexType name="CONDITION_GROUP">
         <xs:complexContent>
             <xs:extension base="CHOICE_GROUP">
                 <xs:sequence>
-                    <xs:element name="members" type="CONDITION_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="condition_members" type="CONDITION_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -747,13 +732,12 @@ Work in progress by Bjørn Næss (bna@dips.no)
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-
     <xs:complexType name="DECISION_GROUP">
         <xs:complexContent>
             <xs:extension base="CHOICE_GROUP">
                 <xs:sequence>
                     <xs:element name="test" type="CONTEXT_EXPRESSION"/>
-                    <xs:element name="members" type="DECISION_BRANCH"/>
+                    <xs:element name="decision_members" type="DECISION_BRANCH"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -767,13 +751,12 @@ Work in progress by Bjørn Næss (bna@dips.no)
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-
     <xs:complexType name="EVENT_GROUP">
         <xs:complexContent>
             <xs:extension base="CHOICE_GROUP">
                 <xs:sequence>
                     <xs:element name="timeout" type="TIMER_WAIT" minOccurs="0"/>
-                    <xs:element name="members" type="EVENT_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="event_members" type="EVENT_BRANCH" minOccurs="0" maxOccurs="unbounded"/>
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -781,13 +764,9 @@ Work in progress by Bjørn Næss (bna@dips.no)
     <xs:complexType name="EVENT_BRANCH">
         <xs:complexContent>
             <xs:extension base="CHOICE_BRANCH"/>
-
-
         </xs:complexContent>
     </xs:complexType>
-    <xs:complexType name="TIME_SPECIFIER" abstract="true">
-
-    </xs:complexType>
+    <xs:complexType name="TIME_SPECIFIER" abstract="true"/>
     <xs:complexType name="CLOCK_TIME">
         <xs:complexContent>
             <xs:extension base="TIME_SPECIFIER">
@@ -812,8 +791,85 @@ Work in progress by Bjørn Næss (bna@dips.no)
                 <xs:sequence>
                     <xs:element name="time" type="DV_CODED_TEXT"/>
                 </xs:sequence>
-
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="M_WORK_PLAN">
+        <xs:sequence>
+            <xs:element name="plans" type="M_TASK_PLAN" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="owner" type="WORK_PLAN" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="timeline" type="M_TIMELINE"/>
+            <xs:element name="calendar" type="M_CALENDAR"/>
+            <xs:element name="context" type="M_PLAN_DATA_CONTEXT"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="M_TASK_PLAN">
+        <xs:sequence>
+            <xs:element name="start_time" type="Date_Time"/>
+            <xs:element name="definition" type="M_TASK_GROUP"/>
+            <xs:element name="owner" type="TASK_PLAN"/>
+            <xs:element name="pending_callbacks" type="M_CALLBACK" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="principal_performer" type="M_PERFORMER_ALLOCATION"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="M_PLAN_ITEM" abstract="true">
+        <xs:sequence>
+            <xs:element name="definition" type="PLAN_ITEM"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="M_TASK_GROUP">
+        <xs:complexContent>
+            <xs:extension base="M_PLAN_ITEM">
+                <xs:sequence>
+                    <xs:element name="members" type="M_PLAN_ITEM" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="definition" type="TASK_GROUP"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="M_TASK">
+        <xs:complexContent>
+            <xs:extension base="M_PLAN_ITEM">
+                <xs:sequence>
+                    <xs:element name="lifecycle_state" type="TASK_LIFECYCLE"/>
+                    <xs:element name="events" type="TASK_EVENT_RECORD" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="preconditions" type="ASSERTION" minOccurs="0" maxOccurs="unbounded"/>
+                    <xs:element name="definition" type="TASK"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="M_TASK_ACTION">
+        <xs:sequence>
+            <xs:element name="definition" type="TASK_ACTION"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- TODO add classes from Expression language , and move to separate file?? -->
+
+    <xs:complexType name="EXPR_VALUE" abstract="true">
+
+    </xs:complexType>
+
+    <xs:complexType name="STATEMENT" abstract="true">
+
+    </xs:complexType>
+
+    <xs:complexType name="ASSERTION">
+        <xs:complexContent>
+            <xs:extension base="STATEMENT">
+                <xs:sequence>
+                    <xs:element name="tag" type="xs:string" minOccurs="0"/>
+                    <xs:element name="string_expression" type="xs:string" minOccurs="0"/>
+                    <xs:element name="expression" type="EXPRESSION"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="EXPRESSION" abstract="true">
+        <xs:complexContent>
+            <xs:extension base="EXPR_VALUE"/>
+        </xs:complexContent>
+    </xs:complexType>
+
 </xs:schema>
